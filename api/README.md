@@ -1,21 +1,21 @@
-# أمثلة الـ API — هشّ مقابل آمن
+# أمثلة الـ API — هشّ مقابل آمن (ASP.NET Core 8)
 
-مثالان بـ Node.js يوضّحان **ثلاث ثغرات** شائعة وكيفية إصلاحها. للتعلّم فقط.
+مشروعان بـ C# / ASP.NET Core يوضّحان **ثلاث ثغرات** شائعة وكيفية إصلاحها. للتعلّم فقط.
 
-> ⚠️ النسخة الهشّة (`insecure-api.js`) تحتوي ثغرات عمدًا. شغّلها على جهازك للتعلّم فقط،
-> ولا تنشرها على الإنترنت، ولا تجرّب أي هجوم على نظام لا تملكه.
+> ⚠️ مشروع `Insecure` يحتوي ثغرات عمدًا. شغّله على جهازك للتعلّم فقط،
+> ولا تنشره على الإنترنت، ولا تجرّب أي هجوم على نظام لا تملكه.
+
+## المتطلبات
+- [.NET SDK 8](https://dotnet.microsoft.com/download) أو أحدث.
 
 ## التشغيل
 
 ```bash
-cd api
-npm install
+# النسخة الهشّة (منفذ 5000)
+dotnet run --project Insecure
 
-# النسخة الهشّة (منفذ 3000)
-npm run insecure
-
-# في طرفية أخرى: النسخة الآمنة (منفذ 3001)
-npm run secure
+# في طرفية أخرى: النسخة الآمنة (منفذ 5001)
+dotnet run --project Secure
 ```
 
 ## قارن بنفسك
@@ -24,21 +24,21 @@ npm run secure
 نستخدم `-G --data-urlencode` ليتولّى curl ترميز الرابط (المسافات والرموز):
 ```bash
 # ❌ الهشّة: الشرط يصبح صحيحًا دائمًا فترجع كل المستخدمين
-curl -s -G "http://localhost:3000/users" --data-urlencode "name=' OR '1'='1"
+curl -s -G "http://localhost:5000/users" --data-urlencode "name=' OR '1'='1"
 
 # ✅ الآمنة: rows = [] — القيمة عوملت كنص لا كأمر
-curl -s -G "http://localhost:3001/users" --data-urlencode "name=' OR '1'='1"
+curl -s -G "http://localhost:5001/users" --data-urlencode "name=' OR '1'='1"
 ```
 
 ### 2) مصادقة
 ```bash
 # ❌ الهشّة: التوكن = رقم المستخدم (يمكن تخمينه)
-curl -X POST http://localhost:3000/login \
+curl -X POST http://localhost:5000/login \
   -H "Content-Type: application/json" \
   -d '{"email":"naif@example.com","password":"P@ssw0rd!"}'
 
-# ✅ الآمنة: توكن JWT موقّع + حد 5 محاولات
-curl -X POST http://localhost:3001/login \
+# ✅ الآمنة: توكن JWT موقّع + حد 5 محاولات لكل IP
+curl -X POST http://localhost:5001/login \
   -H "Content-Type: application/json" \
   -d '{"email":"naif@example.com","password":"P@ssw0rd!"}'
 ```
@@ -46,22 +46,37 @@ curl -X POST http://localhost:3001/login \
 ### 3) IDOR (كسر التحكم بالوصول)
 ```bash
 # ❌ الهشّة: المستخدم 1 يقرأ فاتورة المستخدم 2 بسهولة!
-curl http://localhost:3000/invoices/1002 -H "x-user-id: 1"
+curl http://localhost:5000/invoices/1002 -H "x-user-id: 1"
 
 # ✅ الآمنة: نسجّل الدخول، نأخذ التوكن، ثم نحاول قراءة فاتورة غيرنا
-TOKEN=$(curl -s -X POST http://localhost:3001/login \
+TOKEN=$(curl -s -X POST http://localhost:5001/login \
   -H "Content-Type: application/json" \
   -d '{"email":"naif@example.com","password":"P@ssw0rd!"}' | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 
 # فاتورتنا (1001) ترجع، وفاتورة غيرنا (1002) ترجع 404
-curl http://localhost:3001/invoices/1001 -H "Authorization: Bearer $TOKEN"
-curl http://localhost:3001/invoices/1002 -H "Authorization: Bearer $TOKEN"
+curl http://localhost:5001/invoices/1001 -H "Authorization: Bearer $TOKEN"
+curl http://localhost:5001/invoices/1002 -H "Authorization: Bearer $TOKEN"
+```
+
+## بنية المشروع
+
+```
+api/
+├── Insecure/   ← النسخة الهشّة (Program.cs فيه الثغرات الثلاث)
+└── Secure/     ← النسخة الآمنة (نفس الوظائف بعد الإصلاح)
 ```
 
 ## الثغرات والإصلاحات
 
 | # | الثغرة | الإصلاح |
 |---|--------|---------|
-| 1 | حقن SQL بدمج النصوص | استعلامات مُعامَلة `?` |
-| 2 | كلمة مرور نص صريح + توكن مخمَّن | `bcrypt` + `JWT` + تحديد المعدل |
-| 3 | IDOR بلا تحقق من المالك | التحقق من ملكية المورد على الخادم |
+| 1 | حقن SQL بدمج النصوص | استعلامات مُعامَلة (`Parameters`) |
+| 2 | كلمة مرور نص صريح + توكن مخمَّن | `BCrypt` + `JWT` + تحديد المعدل المدمج |
+| 3 | IDOR بلا تحقق من المالك | التحقق من ملكية المورد عبر مطالبات التوكن |
+
+## التقنيات
+- ASP.NET Core 8 (Minimal API)
+- `Microsoft.Data.Sqlite` (قاعدة بيانات داخل الذاكرة)
+- `BCrypt.Net-Next` (تجزئة كلمات المرور)
+- `Microsoft.AspNetCore.Authentication.JwtBearer` (مصادقة JWT)
+- `RateLimiter` المدمج في ASP.NET Core (تحديد المعدل)

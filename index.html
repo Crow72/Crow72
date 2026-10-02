@@ -56,10 +56,10 @@
           <span></span><span></span><span></span>
           <p class="terminal__title">api-security — demo</p>
         </div>
-        <pre class="terminal__body"><span class="c-dim">$</span> curl "http://localhost:3000/users?name=<span class="c-red">' OR '1'='1</span>"
+        <pre class="terminal__body"><span class="c-dim">$</span> curl "http://localhost:5000/users?name=<span class="c-red">' OR '1'='1</span>"
 <span class="c-red">⚠  الكود الهشّ:</span> رجّع <span class="c-red">كل</span> المستخدمين — تسرّب بيانات!
 
-<span class="c-dim">$</span> curl "http://localhost:3000/users?name=<span class="c-green">' OR '1'='1</span>"
+<span class="c-dim">$</span> curl "http://localhost:5001/users?name=<span class="c-green">' OR '1'='1</span>"
 <span class="c-green">✔  الكود الآمن:</span> [] — لا نتائج، الاستعلام مُعامَل.</pre>
       </div>
     </div>
@@ -74,7 +74,8 @@
         مدخلات من العالم الخارجي، فهي من أكثر النقاط التي يستهدفها المهاجمون. في هذا المشروع
         نأخذ <strong>ثلاثًا من أشهر الثغرات</strong> حسب تصنيف
         <a href="https://owasp.org/API-Security/editions/2023/en/0x11-t10/" target="_blank" rel="noopener">OWASP API Security Top 10</a>،
-        ونعرض لكل واحدة: الكود الخاطئ، كيف يُستغَل، ثم الإصلاح الصحيح — بأسلوب عملي ومباشر.
+        ونعرض لكل واحدة: الكود الخاطئ، كيف يُستغَل، ثم الإصلاح الصحيح — بأمثلة عملية بلغة
+        <strong>C#</strong> على <strong>ASP.NET Core 8</strong>.
       </p>
 
       <div class="stats">
@@ -163,12 +164,11 @@
   <section id="run" class="section">
     <div class="container container--narrow">
       <h2 class="section__title">شغّل الكود على جهازك</h2>
-      <p class="section__lead">مثالان جاهزان بـ Node.js داخل مجلد <code>api/</code> — واحد هشّ وواحد آمن — لتجرب الفرق بنفسك.</p>
+      <p class="section__lead">مشروعان جاهزان بـ ASP.NET Core داخل مجلد <code>api/</code> — واحد هشّ وواحد آمن — لتجرب الفرق بنفسك.</p>
       <ol class="steps">
-        <li>ثبّت <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js</a> (نسخة 18 أو أحدث).</li>
-        <li>افتح الطرفية داخل مجلد المشروع ثم: <code>cd api &amp;&amp; npm install</code></li>
-        <li>النسخة الهشّة (للتعلّم فقط): <code>npm run insecure</code></li>
-        <li>النسخة الآمنة: <code>npm run secure</code></li>
+        <li>ثبّت <a href="https://dotnet.microsoft.com/download" target="_blank" rel="noopener">.NET SDK 8</a> أو أحدث.</li>
+        <li>النسخة الهشّة (للتعلّم فقط): <code>dotnet run --project api/Insecure</code> ← المنفذ 5000</li>
+        <li>في طرفية أخرى، النسخة الآمنة: <code>dotnet run --project api/Secure</code> ← المنفذ 5001</li>
         <li>جرّب الطلبات الموجودة في <code>api/README.md</code> وقارن النتائج.</li>
       </ol>
     </div>

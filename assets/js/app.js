@@ -1,5 +1,6 @@
 /* =========================================================
    أمن واجهات الـ API — منطق الصفحة
+   أمثلة الكود بلغة C# (ASP.NET Core 8 — Minimal API)
    - بيانات المقارنات الثلاث
    - بناء البطاقات + تبويبات (هشّ / آمن)
    - أزرار نسخ الكود
@@ -15,22 +16,25 @@ const comparisons = [
     en: "SQL Injection",
     risk: "دمج مدخلات المستخدم مباشرة داخل استعلام قاعدة البيانات يسمح للمهاجم بتغيير منطق الاستعلام، فيقرأ أو يحذف بيانات لا تخصّه.",
     vuln: `// ❌ هشّ: ندمج مدخل المستخدم (name) مباشرة في نص الاستعلام
-app.get("/users", (req, res) => {
-  const name = req.query.name;
-  // الخطأ: القيمة تصبح جزءًا من أمر SQL نفسه
-  const sql = \`SELECT id, name, email FROM users WHERE name = '\${name}'\`;
-  db.all(sql, (err, rows) => res.json(rows));
+app.MapGet("/users", (string? name) =>
+{
+    var sql = $"SELECT id, name, email FROM users WHERE name = '{name}'";
+    using var cmd = db.CreateCommand();
+    cmd.CommandText = sql;      // ❌ القيمة صارت جزءًا من أمر SQL نفسه
+    return ReadUsers(cmd);
 });`,
     attack:
       'الطلب <code>?name=\' OR \'1\'=\'1</code> يحوّل الشرط إلى صحيح دائمًا، فيعيد <strong>كل</strong> المستخدمين. وبصيغة <code>UNION</code> يمكن سحب جداول أخرى كليًا.',
     secure: `// ✅ آمن: استعلام مُعامَل — القيمة تُمرَّر كبيانات لا كأمر
-app.get("/users", (req, res) => {
-  const name = req.query.name;
-  const sql = "SELECT id, name, email FROM users WHERE name = ?";
-  db.all(sql, [name], (err, rows) => res.json(rows)); // ? مكان آمن للقيمة
+app.MapGet("/users", (string? name) =>
+{
+    using var cmd = db.CreateCommand();
+    cmd.CommandText = "SELECT id, name, email FROM users WHERE name = $name";
+    cmd.Parameters.AddWithValue("$name", name ?? "");  // مكان آمن للقيمة
+    return ReadUsers(cmd);
 });`,
     lesson:
-      "لا تبنِ الاستعلام بدمج النصوص أبدًا. استخدم الاستعلامات المُعامَلة (Prepared Statements)، وتحقّق من نوع المدخلات، وامنح مستخدم قاعدة البيانات أقل صلاحيات ممكنة.",
+      "لا تبنِ الاستعلام بدمج النصوص أبدًا. استخدم الاستعلامات المُعامَلة (Parameters)، أو ORM مثل Entity Framework Core، وتحقّق من نوع المدخلات، وامنح مستخدم قاعدة البيانات أقل صلاحيات ممكنة.",
   },
   {
     id: "auth",
@@ -38,33 +42,37 @@ app.get("/users", (req, res) => {
     title: "مصادقة مكسورة",
     en: "Broken Authentication",
     risk: "تخزين كلمات المرور كنص صريح، وإصدار توكن يمكن تخمينه، وعدم تحديد عدد المحاولات، كلها تفتح الباب لتسريب الحسابات والتخمين العنيف.",
-    vuln: `// ❌ هشّ: كلمة المرور نص صريح + توكن = معرّف يمكن تخمينه + بلا حد للمحاولات
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  const user = users.find(u => u.email === email);
-  if (user && user.password === password) {   // مقارنة نص صريح
-    return res.json({ token: user.id });        // "توكن" = رقم المستخدم!
-  }
-  res.status(401).json({ error: "بيانات خاطئة" });
+    vuln: `// ❌ هشّ: كلمة مرور نص صريح + "توكن" = رقم المستخدم + بلا حدّ للمحاولات
+app.MapPost("/login", (LoginDto dto) =>
+{
+    var user = FindUserByEmail(dto.Email);
+    if (user is not null && user.Password == dto.Password) // ❌ مقارنة نص صريح
+        return Results.Json(new { token = user.Id.ToString() }); // ❌ يمكن تخمينه
+    return Results.Json(new { error = "بيانات خاطئة" }, statusCode: 401);
 });`,
     attack:
-      'تسريب قاعدة البيانات يكشف كل كلمات المرور فورًا. والتوكن <code>= user.id</code> يمكن تخمينه (1، 2، 3…) لانتحال أي مستخدم. وغياب الحد يسمح بتجربة ملايين كلمات المرور.',
-    secure: `// ✅ آمن: تجزئة bcrypt + توكن JWT موقّع + حد للمحاولات + رسالة عامة
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+      'تسريب قاعدة البيانات يكشف كل كلمات المرور فورًا. والتوكن <code>= user.Id</code> يمكن تخمينه (1، 2، 3…) لانتحال أي مستخدم. وغياب الحد يسمح بتجربة ملايين كلمات المرور.',
+    secure: `// ✅ آمن: BCrypt للتجزئة + JWT موقّع + تحديد المعدل + رسالة عامة
+app.MapPost("/login", (LoginDto dto) =>
+{
+    var user = FindUserByEmail(dto.Email);
+    var ok = user is not null &&
+             BCrypt.Net.BCrypt.Verify(dto.Password ?? "", user.PasswordHash);
+    if (!ok) return Results.Json(new { error = "بيانات الدخول غير صحيحة" },
+                                 statusCode: 401);
 
-app.post("/login", loginRateLimiter, async (req, res) => {
-  const { email, password } = req.body;
-  const user = users.find(u => u.email === email);
-  // bcrypt.compare تقارن بأمان ولو كان المستخدم غير موجود (نحميه من تسريب التوقيت)
-  const ok = user && await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ error: "بيانات الدخول غير صحيحة" });
-
-  const token = jwt.sign({ sub: user.id }, process.env.JWT_SECRET, { expiresIn: "15m" });
-  res.json({ token });
-});`,
+    var token = new JwtSecurityTokenHandler().CreateEncodedJwt(
+        new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[] { new Claim("sub", user!.Id.ToString()) }),
+            Expires = DateTime.UtcNow.AddMinutes(15),
+            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256),
+        });
+    return Results.Json(new { token });
+})
+.RequireRateLimiting("login");   // 5 محاولات لكل IP خلال 15 دقيقة`,
     lesson:
-      "خزّن تجزئة كلمة المرور بـ bcrypt أو argon2 (لا النص). وقّع التوكن بمفتاح سرّي مع صلاحية قصيرة. حدّد معدل المحاولات، واجعل رسالة الخطأ عامة حتى لا تكشف أي الحقلين خاطئ.",
+      "خزّن تجزئة كلمة المرور بـ BCrypt أو Argon2 (لا النص). وقّع التوكن (JWT) بمفتاح سرّي مع صلاحية قصيرة. فعّل تحديد المعدل (Rate Limiting) المدمج في ASP.NET Core، واجعل رسالة الخطأ عامة حتى لا تكشف أي الحقلين خاطئ.",
   },
   {
     id: "idor",
@@ -72,25 +80,29 @@ app.post("/login", loginRateLimiter, async (req, res) => {
     title: "كسر التحكم بالوصول (IDOR)",
     en: "Broken Object Level Authorization",
     risk: "إرجاع أي سجلّ بناءً على معرّفه فقط — دون التأكد أن المستخدم الحالي يملكه — يتيح لأي شخص رؤية بيانات غيره بمجرد تغيير الرقم في الرابط.",
-    vuln: `// ❌ هشّ: نرجّع الفاتورة بالـ ID فقط، بلا تحقق من المالك
-app.get("/invoices/:id", authRequired, (req, res) => {
-  const invoice = invoices.find(i => i.id === req.params.id);
-  if (!invoice) return res.status(404).json({ error: "غير موجودة" });
-  res.json(invoice); // أي مستخدم مسجّل يرى فاتورة أي أحد بتغيير الرقم!
+    vuln: `// ❌ هشّ: نرجّع الفاتورة بالـ id فقط، بلا تحقق من المالك
+app.MapGet("/invoices/{id:int}", (int id, HttpContext ctx) =>
+{
+    var inv = invoices.FirstOrDefault(i => i.Id == id);
+    if (inv is null) return Results.Json(new { error = "غير موجودة" },
+                                         statusCode: 404);
+    return Results.Json(inv); // ❌ أي مستخدم يرى فاتورة غيره بتغيير الرقم!
 });`,
     attack:
       'المستخدم يطلب فاتورته <code>/invoices/1001</code>، ثم يجرّب <code>/invoices/1002</code>، <code>1003</code>… فيقرأ فواتير بقية العملاء. هذه من أكثر ثغرات الـ API انتشارًا.',
-    secure: `// ✅ آمن: نتحقق أن المورد يخص المستخدم الحالي (req.user من التوكن)
-app.get("/invoices/:id", authRequired, (req, res) => {
-  const invoice = invoices.find(i => i.id === req.params.id);
-  // نعيد 404 (لا 403) حتى لا نكشف أن الفاتورة موجودة أصلًا
-  if (!invoice || invoice.ownerId !== req.user.sub) {
-    return res.status(404).json({ error: "غير موجودة" });
-  }
-  res.json(invoice);
-});`,
+    secure: `// ✅ آمن: نتحقق من الهوية (JWT) ثم أن المورد يخص المستخدم الحالي
+app.MapGet("/invoices/{id:int}", (int id, ClaimsPrincipal user) =>
+{
+    var sub = user.FindFirst("sub")?.Value;       // هوية المستخدم من التوكن
+    var inv = invoices.FirstOrDefault(i => i.Id == id);
+    // 404 (لا 403) حتى لا نكشف وجود فاتورة لا يملكها المستخدم
+    if (inv is null || inv.OwnerId.ToString() != sub)
+        return Results.Json(new { error = "غير موجودة" }, statusCode: 404);
+    return Results.Json(inv);
+})
+.RequireAuthorization();`,
     lesson:
-      "طبّق التحقق من الصلاحية على مستوى كل كائن وفي كل طلب على الخادم. لا تثق برقم المعرّف القادم من العميل، واعتمد هوية المستخدم من التوكن لا من الطلب.",
+      "طبّق التحقق من الصلاحية على مستوى كل كائن وفي كل طلب على الخادم. لا تثق برقم المعرّف القادم من العميل، واعتمد هوية المستخدم من مطالبات التوكن (Claims) لا من الطلب.",
   },
 ];
 
@@ -180,7 +192,7 @@ function codeBlock(code) {
 
   const pre = document.createElement("pre");
   const codeEl = document.createElement("code");
-  codeEl.className = "language-javascript";
+  codeEl.className = "language-csharp";
   codeEl.textContent = code; // تهريب تلقائي للرموز
   pre.append(codeEl);
 
@@ -215,7 +227,7 @@ const quizData = [
     q: "ما الحل الأساسي لمنع حقن SQL؟",
     opts: [
       "تشفير قاعدة البيانات بالكامل",
-      "استخدام الاستعلامات المُعامَلة (Parameterized Queries)",
+      "استخدام الاستعلامات المُعامَلة (Parameters) أو ORM",
       "إخفاء رسائل الخطأ عن المستخدم",
     ],
     answer: 1,
@@ -226,7 +238,7 @@ const quizData = [
     opts: [
       "كنص صريح مع نسخة احتياطية",
       "بتشفير قابل لفك التشفير",
-      "كتجزئة (Hash) عبر bcrypt أو argon2",
+      "كتجزئة (Hash) عبر BCrypt أو Argon2",
     ],
     answer: 2,
     why: "التجزئة في اتجاه واحد؛ حتى لو تسرّبت القاعدة تبقى كلمات المرور محمية.",
