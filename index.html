@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>أمن واجهات الـ API — كود هشّ مقابل كود آمن</title>
+  <meta name="description" content="مشروع تعليمي في الأمن السيبراني: ثلاث ثغرات شائعة في واجهات برمجة التطبيقات (API) وكيف نصلحها، بمقارنة مباشرة بين الكود الهشّ والكود الآمن." />
+
+  <!-- Open Graph: يظهر عند مشاركة الرابط في لنكدان -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="أمن واجهات الـ API — كود هشّ مقابل كود آمن" />
+  <meta property="og:description" content="مشروع تعليمي: 3 ثغرات شائعة في الـ API وكيف نصلحها، بمقارنة مباشرة جنبًا إلى جنب." />
+  <meta property="og:locale" content="ar_AR" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- شريط التنقل -->
+  <header class="nav" id="top">
+    <div class="container nav__inner">
+      <a class="brand" href="#top">
+        <span class="brand__logo">🛡️</span>
+        <span class="brand__text">أمن الـ <span class="accent">API</span></span>
+      </a>
+      <nav class="nav__links" aria-label="التنقل الرئيسي">
+        <a href="#intro">نظرة عامة</a>
+        <a href="#compare">المقارنات</a>
+        <a href="#summary">الخلاصة</a>
+        <a href="#quiz">اختبر نفسك</a>
+        <a href="#run">تشغيل الكود</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- الواجهة -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <p class="hero__eyebrow">مشروع تعليمي · الأمن السيبراني · OWASP API Top 10</p>
+      <h1 class="hero__title">أمن واجهات برمجة التطبيقات <span class="accent">(API)</span></h1>
+      <p class="hero__sub">
+        ثلاث ثغرات شائعة تجعل الـ API هشّ، ومقابل كل واحدة الطريقة الآمنة الصحيحة.
+        كود خاطئ وكود سليم <strong>جنبًا إلى جنب</strong>، عشان نفهم الفرق ونتعلّم نكتب كودًا آمنًا.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="#compare">ابدأ المقارنة ↓</a>
+        <a class="btn btn--ghost" href="#run">شغّل الكود محليًا</a>
+      </div>
+
+      <div class="terminal" aria-hidden="true">
+        <div class="terminal__bar">
+          <span></span><span></span><span></span>
+          <p class="terminal__title">api-security — demo</p>
+        </div>
+        <pre class="terminal__body"><span class="c-dim">$</span> curl "http://localhost:3000/users?name=<span class="c-red">' OR '1'='1</span>"
+<span class="c-red">⚠  الكود الهشّ:</span> رجّع <span class="c-red">كل</span> المستخدمين — تسرّب بيانات!
+
+<span class="c-dim">$</span> curl "http://localhost:3000/users?name=<span class="c-green">' OR '1'='1</span>"
+<span class="c-green">✔  الكود الآمن:</span> [] — لا نتائج، الاستعلام مُعامَل.</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- نظرة عامة -->
+  <section id="intro" class="section">
+    <div class="container">
+      <h2 class="section__title">لماذا هذا المشروع؟</h2>
+      <p class="section__lead">
+        واجهات الـ API هي العمود الفقري لأي تطبيق حديث (موبايل، ويب، خدمات). ولأنها تستقبل
+        مدخلات من العالم الخارجي، فهي من أكثر النقاط التي يستهدفها المهاجمون. في هذا المشروع
+        نأخذ <strong>ثلاثًا من أشهر الثغرات</strong> حسب تصنيف
+        <a href="https://owasp.org/API-Security/editions/2023/en/0x11-t10/" target="_blank" rel="noopener">OWASP API Security Top 10</a>،
+        ونعرض لكل واحدة: الكود الخاطئ، كيف يُستغَل، ثم الإصلاح الصحيح — بأسلوب عملي ومباشر.
+      </p>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__num">3</div>
+          <div class="stat__label">ثغرات مشروحة خطوة بخطوة</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">6</div>
+          <div class="stat__label">نماذج كود (هشّ + آمن)</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">100%</div>
+          <div class="stat__label">مفتوح المصدر وقابل للتشغيل</div>
+        </div>
+      </div>
+
+      <div class="callout callout--warn">
+        <strong>تنبيه أخلاقي:</strong>
+        النماذج الهشّة هنا لغرض <u>التعلّم فقط</u>، تُشغَّل على جهازك محليًا لفهم الخطأ وإصلاحه.
+        لا تنشرها في بيئة حقيقية، ولا تختبر هذه الهجمات على أي نظام لا تملكه أو ليس لديك إذن صريح به.
+      </div>
+    </div>
+  </section>
+
+  <!-- المقارنات (تُبنى عبر JavaScript) -->
+  <section id="compare" class="section section--alt">
+    <div class="container">
+      <h2 class="section__title">المقارنات: كود هشّ مقابل كود آمن</h2>
+      <p class="section__lead">
+        اضغط على التبويبات للتبديل بين <span class="pill pill--bad">الكود الهشّ</span>
+        و<span class="pill pill--good">الكود الآمن</span> لكل ثغرة.
+      </p>
+      <div id="comparisons" class="comparisons"><!-- يُملأ بواسطة app.js --></div>
+      <noscript>
+        <p class="callout callout--warn">هذه الصفحة تعرض أمثلة الكود عبر JavaScript. فعّل الـ JavaScript لعرض المقارنات.</p>
+      </noscript>
+    </div>
+  </section>
+
+  <!-- جدول الخلاصة -->
+  <section id="summary" class="section">
+    <div class="container">
+      <h2 class="section__title">الخلاصة في جدول</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>الثغرة</th>
+              <th>الخطر باختصار</th>
+              <th>الإصلاح الجوهري</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>حقن SQL<br /><span class="muted">SQL Injection</span></td>
+              <td>تنفيذ أوامر على قاعدة البيانات وتسريب أو حذف بيانات.</td>
+              <td>استعلامات مُعامَلة (Parameterized Queries) + التحقق من المدخلات.</td>
+            </tr>
+            <tr>
+              <td>مصادقة مكسورة<br /><span class="muted">Broken Authentication</span></td>
+              <td>كلمات مرور بنص صريح، توكن يُخمَّن، تخمين عنيف بلا حدود.</td>
+              <td>تجزئة bcrypt/argon2 + توكن JWT موقّع + تحديد المعدل (Rate Limiting).</td>
+            </tr>
+            <tr>
+              <td>كسر التحكم بالوصول<br /><span class="muted">IDOR / BOLA</span></td>
+              <td>رؤية بيانات مستخدمين آخرين بتغيير رقم المعرّف في الطلب.</td>
+              <td>التحقق من ملكية المورد على الخادم في كل طلب.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- اختبار قصير -->
+  <section id="quiz" class="section section--alt">
+    <div class="container container--narrow">
+      <h2 class="section__title">اختبر معلوماتك</h2>
+      <p class="section__lead">ثلاثة أسئلة سريعة لترسيخ الفكرة.</p>
+      <div id="quiz" class="quiz"><!-- يُملأ بواسطة app.js --></div>
+    </div>
+  </section>
+
+  <!-- تشغيل الكود -->
+  <section id="run" class="section">
+    <div class="container container--narrow">
+      <h2 class="section__title">شغّل الكود على جهازك</h2>
+      <p class="section__lead">مثالان جاهزان بـ Node.js داخل مجلد <code>api/</code> — واحد هشّ وواحد آمن — لتجرب الفرق بنفسك.</p>
+      <ol class="steps">
+        <li>ثبّت <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js</a> (نسخة 18 أو أحدث).</li>
+        <li>افتح الطرفية داخل مجلد المشروع ثم: <code>cd api &amp;&amp; npm install</code></li>
+        <li>النسخة الهشّة (للتعلّم فقط): <code>npm run insecure</code></li>
+        <li>النسخة الآمنة: <code>npm run secure</code></li>
+        <li>جرّب الطلبات الموجودة في <code>api/README.md</code> وقارن النتائج.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__made">صُمّم كمشروع تعليمي في الأمن السيبراني بواسطة <strong>نايف</strong>.</p>
+      <p class="footer__note">المحتوى لأغراض التوعية والتعليم. الثغرات مبنية على تصنيف OWASP API Security Top 10.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>

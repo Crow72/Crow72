@@ -1,0 +1,19 @@
+{
+  "name": "api-security-demo",
+  "version": "1.0.0",
+  "description": "مشروع تعليمي: مقارنة بين API هشّ وAPI آمن (ثلاث ثغرات شائعة).",
+  "type": "commonjs",
+  "scripts": {
+    "insecure": "node insecure-api.js",
+    "secure": "node secure-api.js"
+  },
+  "keywords": ["security", "owasp", "api", "education", "arabic"],
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
