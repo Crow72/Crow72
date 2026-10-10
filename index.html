@@ -14,8 +14,8 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Markazi+Text:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -51,16 +51,15 @@
         <a class="btn btn--ghost" href="#run">شغّل الكود محليًا</a>
       </div>
 
-      <div class="terminal" aria-hidden="true">
-        <div class="terminal__bar">
-          <span></span><span></span><span></span>
-          <p class="terminal__title">api-security — demo</p>
+      <div class="preview" aria-hidden="true">
+        <div class="preview__row preview__row--bad">
+          <span class="preview__tag">هشّ</span>
+          <span class="preview__code">WHERE name = '<b>' OR '1'='1</b>' &nbsp;→&nbsp; يسرّب كل البيانات</span>
         </div>
-        <pre class="terminal__body"><span class="c-dim">$</span> curl "http://localhost:5000/users?name=<span class="c-red">' OR '1'='1</span>"
-<span class="c-red">⚠  الكود الهشّ:</span> رجّع <span class="c-red">كل</span> المستخدمين — تسرّب بيانات!
-
-<span class="c-dim">$</span> curl "http://localhost:5001/users?name=<span class="c-green">' OR '1'='1</span>"
-<span class="c-green">✔  الكود الآمن:</span> [] — لا نتائج، الاستعلام مُعامَل.</pre>
+        <div class="preview__row preview__row--good">
+          <span class="preview__tag">آمن</span>
+          <span class="preview__code">WHERE name = <b>$name</b> &nbsp;→&nbsp; مُعامَل، لا تسريب</span>
+        </div>
       </div>
     </div>
   </section>
